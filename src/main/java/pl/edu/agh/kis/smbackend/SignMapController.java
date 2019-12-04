@@ -76,9 +76,9 @@ public class SignMapController {
 
     @PostMapping(path = "/group", produces = "application/json")
     public ResponseEntity<Group> createGroup(
-            @RequestParam String name, @RequestParam List<Integer> usersId) {
+            @RequestParam String name, @RequestParam List<String> usersMails) {
         List<User> users = new ArrayList<>();
-        users.addAll(userDAO.findAllById(usersId));
+        users.addAll(userDAO.findAllByeAndEmail(usersMails));
         Group newGroup = new Group(name, users);
         groupDAO.save(newGroup);
         URI uri =
@@ -101,7 +101,8 @@ public class SignMapController {
 
     @PostMapping(path = "leaveGroup", produces = "application/json")
     public ResponseEntity<Group> leaveGroup(@RequestParam int userID, @RequestParam int groupID) {
-        if (!userDAO.findById(userID).isPresent()) return ResponseEntity.notFound().header("Access-Control-Allow-Origin", "*").build();
+        if (!userDAO.findById(userID).isPresent())
+            return ResponseEntity.notFound().header("Access-Control-Allow-Origin", "*").build();
 
         groupDAO
                 .findById(groupID)
