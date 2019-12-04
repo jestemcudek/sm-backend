@@ -89,7 +89,9 @@ public class SignMapController {
         ObjectMapper mapper = new ObjectMapper();
         List<String> mails = Arrays.asList(mapper.readValue(usersMails, String.class));
         List<User> users = new ArrayList<>();
-        users.addAll(userDAO.findAllByAndEmail(mails));
+        for (String mail:mails) {
+            users.add(userDAO.getUserByEmail(mail));
+        }
         Group newGroup = new Group(name, users);
         groupDAO.save(newGroup);
         URI uri =
