@@ -2,6 +2,7 @@ package pl.edu.agh.kis.smbackend;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import mil.nga.sf.geojson.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,8 +14,13 @@ import pl.edu.agh.kis.smbackend.dao.GroupDAO;
 import pl.edu.agh.kis.smbackend.dao.LocationDAO;
 import pl.edu.agh.kis.smbackend.dao.UserDAO;
 import pl.edu.agh.kis.smbackend.model.Group;
+import pl.edu.agh.kis.smbackend.model.Location;
 import pl.edu.agh.kis.smbackend.model.User;
 
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.core.Response;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -126,8 +132,28 @@ public class SignMapController {
         return ResponseEntity.ok(groups);
     }
 
-//    @PostMapping(path = "/locations", produces = "application/json")
-//    public ResponseEntity<Location> getPropositions(@RequestParam double latitude, @RequestParam double longitude){
-//
-//    }
+    @PostMapping(path = "/locations", produces = "application/json")
+    public ResponseEntity<List<Location>> getPropositions(@RequestParam double latitude, @RequestParam double longitude) {
+        Client client = ClientBuilder.newClient();
+        Entity<String> payload = Entity.json("{\"request\":\"pois\", \"geometry\":{\"bbox\":[[19.922776, 50.065689],[19.912776, 50.035689]],\"geojson\":{\"type\":\"Point\", \"coordinates\":[19.922776, 50.065689]},\"buffer\":200}}");
+        Response response = client.target("https://api.openrouteservice.org/pois")
+                .request()
+                .header("Authorization", "5b3ce3597851110001cf624819f9959e642a4232bf8709fe89c37b3b")
+                .header("Accept", "application/json, application/geo+json, application/gpx+xml, img/png; charset=utf-8")
+                .post(payload);
+        String content = response.readEntity(String.class);
+        FeatureCollection fc = FeatureConverter.toFeatureCollection(content);
+        Geometry geometry = fc.getFeature(0).getGeometry();
+        mil.nga.sf.geojson.LineString ls = (LineString) geometry;
+        return ResponseEntity.ok(retrieveCoordinates(ls.getCoordinates()));
+
+    }
+
+    private List<Location> retrieveCoordinates(List<Position> positionList) {
+        List<Location> returnValue = new ArrayList<>();
+        for (Position pos : positionList) {
+            returnValue.add(new Location(pos.getY(), pos.getX()));
+        }
+        return returnValue;
+    }
 }

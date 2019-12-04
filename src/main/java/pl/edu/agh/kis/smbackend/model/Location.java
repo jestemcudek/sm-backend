@@ -19,4 +19,9 @@ public class Location implements Serializable {
     private Double longitude;
     private Double latitude;
     private Double crowdness;
+
+    public Location(Double latitude, Double longitude) {
+        this.latitude = latitude;
+        this.longitude = longitude;
+    }
 }
