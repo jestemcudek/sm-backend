@@ -11,6 +11,7 @@ import pl.edu.agh.kis.smbackend.dao.GroupDAO;
 import pl.edu.agh.kis.smbackend.dao.LocationDAO;
 import pl.edu.agh.kis.smbackend.dao.UserDAO;
 import pl.edu.agh.kis.smbackend.model.Group;
+import pl.edu.agh.kis.smbackend.model.Location;
 import pl.edu.agh.kis.smbackend.model.User;
 
 import java.net.URI;
@@ -78,7 +79,7 @@ public class SignMapController {
     public ResponseEntity<Group> createGroup(
             @RequestParam String name, @RequestParam List<String> usersMails) {
         List<User> users = new ArrayList<>();
-        users.addAll(userDAO.findAllByeAndEmail(usersMails));
+        users.addAll(userDAO.findAllByAndEmail(usersMails));
         Group newGroup = new Group(name, users);
         groupDAO.save(newGroup);
         URI uri =
@@ -120,4 +121,9 @@ public class SignMapController {
                         .collect(Collectors.toList());
         return ResponseEntity.ok(groups);
     }
+
+//    @PostMapping(path = "/locations", produces = "application/json")
+//    public ResponseEntity<Location> getPropositions(@RequestParam double latitude, @RequestParam double longitude){
+//
+//    }
 }
