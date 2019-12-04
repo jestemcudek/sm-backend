@@ -89,7 +89,7 @@ public class SignMapController {
         ObjectMapper mapper = new ObjectMapper();
         List<String> mails = Arrays.asList(mapper.readValue(usersMails, String.class));
         List<User> users = new ArrayList<>();
-        for (String mail:mails) {
+        for (String mail : mails) {
             users.add(userDAO.getUserByEmail(mail));
         }
         Group newGroup = new Group(name, users);
@@ -145,16 +145,19 @@ public class SignMapController {
                 .post(payload);
         String content = response.readEntity(String.class);
         FeatureCollection fc = FeatureConverter.toFeatureCollection(content);
-        Geometry geometry = fc.getFeature(0).getGeometry();
-        mil.nga.sf.geojson.LineString ls = (LineString) geometry;
-        return ResponseEntity.ok(retrieveCoordinates(ls.getCoordinates()));
+        List<Feature> featureList = fc.getFeatures();
+        List<Geometry> geometries = new ArrayList<>();
+        featureList.forEach(feature -> geometries.add(feature.getGeometry()));
+        List<Point> points = new ArrayList<>();
+        geometries.forEach(geometry -> points.add((Point) geometry));
+        return ResponseEntity.ok(retrieveCoordinates(points));
 
     }
 
-    private List<Location> retrieveCoordinates(List<Position> positionList) {
+    private List<Location> retrieveCoordinates(List<Point> points) {
         List<Location> returnValue = new ArrayList<>();
-        for (Position pos : positionList) {
-            returnValue.add(new Location(pos.getY(), pos.getX()));
+        for (Point pos : points) {
+            returnValue.add(new Location(pos.getCoordinates().getY(), pos.getCoordinates().getX()));
         }
         return returnValue;
     }
