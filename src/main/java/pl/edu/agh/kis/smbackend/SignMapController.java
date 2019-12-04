@@ -1,5 +1,7 @@
 package pl.edu.agh.kis.smbackend;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -11,11 +13,11 @@ import pl.edu.agh.kis.smbackend.dao.GroupDAO;
 import pl.edu.agh.kis.smbackend.dao.LocationDAO;
 import pl.edu.agh.kis.smbackend.dao.UserDAO;
 import pl.edu.agh.kis.smbackend.model.Group;
-import pl.edu.agh.kis.smbackend.model.Location;
 import pl.edu.agh.kis.smbackend.model.User;
 
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -77,9 +79,11 @@ public class SignMapController {
 
     @PostMapping(path = "/group", produces = "application/json")
     public ResponseEntity<Group> createGroup(
-            @RequestParam String name, @RequestParam List<String> usersMails) {
+            @RequestParam String name, @RequestParam String usersMails) throws JsonProcessingException {
+        ObjectMapper mapper = new ObjectMapper();
+        List<String> mails = Arrays.asList(mapper.readValue(usersMails, String.class));
         List<User> users = new ArrayList<>();
-        users.addAll(userDAO.findAllByAndEmail(usersMails));
+        users.addAll(userDAO.findAllByAndEmail(mails));
         Group newGroup = new Group(name, users);
         groupDAO.save(newGroup);
         URI uri =
