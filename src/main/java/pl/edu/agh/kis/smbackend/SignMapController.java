@@ -1,7 +1,6 @@
 package pl.edu.agh.kis.smbackend;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import mil.nga.sf.geojson.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -86,8 +85,9 @@ public class SignMapController {
     @PostMapping(path = "/group", produces = "application/json")
     public ResponseEntity<Group> createGroup(
             @RequestParam String name, @RequestParam String usersMails) throws JsonProcessingException {
-        ObjectMapper mapper = new ObjectMapper();
-        List<String> mails = Arrays.asList(mapper.readValue(usersMails, String.class));
+//        ObjectMapper mapper = new ObjectMapper();
+//        List<String> mails = Arrays.asList(mapper.readValue(usersMails, String.class));
+        List<String> mails = Arrays.asList(usersMails.split(","));
         List<User> users = new ArrayList<>();
         for (String mail : mails) {
             users.add(userDAO.getUserByEmail(mail));
