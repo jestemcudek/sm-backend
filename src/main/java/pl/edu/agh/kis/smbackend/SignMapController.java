@@ -61,15 +61,13 @@ public class SignMapController {
         return ResponseEntity.created(uri).header("Access-Control-Allow-Origin", "*").body(userToAdd);
     }
 
-    @PostMapping(path = "/login", produces = "application/json")
+    @GetMapping(path = "/login", produces = "application/json")
     public ResponseEntity<User> loginUser(@RequestParam String email, @RequestParam String password) {
         User loggedUser = userDAO.getUserByEmailAndAndPassword(email, bCryptPasswordEncoder.encode(password));
         //User loggedUser = userDAO.getUserByEmailAndAndPassword(email, password);
         if (loggedUser == null) {
             return ResponseEntity.notFound().header("Access-Control-Allow-Origin", "*").build();
         }
-//        HttpHeaders responseHeaders = new HttpHeaders();
-//        responseHeaders.add("Access-Control-Allow-Origin", "*");
         return ResponseEntity.status(HttpStatus.OK).body(loggedUser);
     }
 
@@ -113,33 +111,33 @@ public class SignMapController {
     }
 
     @PostMapping(path = "/selectGroup", produces = "application/json")
-    public ResponseEntity<Group> selectGroup(@RequestParam int userID, @RequestParam int groupID) {
+    public ResponseEntity<Group> selectGroup(Authentication authentication, @RequestParam int groupID) {
         User newMember = null;
-        if (userDAO.findById(userID).isPresent() && groupDAO.findById(groupID).isPresent()) {
-            newMember = userDAO.findById(userID).get();
+        if (groupDAO.findById(groupID).isPresent()) {
+            newMember = userDAO.getUserByEmail(authentication.getPrincipal().toString());
             groupDAO.findById(groupID).get().getGroupMembers().add(newMember);
             return ResponseEntity.ok().header("Access-Control-Allow-Origin", "*").build();
         } else return ResponseEntity.notFound().header("Access-Control-Allow-Origin", "*").build();
     }
 
     @PostMapping(path = "leaveGroup", produces = "application/json")
-    public ResponseEntity<Group> leaveGroup(@RequestParam int userID, @RequestParam int groupID) {
-        if (!userDAO.findById(userID).isPresent())
-            return ResponseEntity.notFound().header("Access-Control-Allow-Origin", "*").build();
+    public ResponseEntity<Group> leaveGroup(Authentication authentication, @RequestParam int groupID) {
+        User user = userDAO.getUserByEmail(authentication.getPrincipal().toString());
 
         groupDAO
                 .findById(groupID)
-                .ifPresent(group -> group.getGroupMembers().remove(userDAO.findById(userID).get()));
+                .ifPresent(group -> group.getGroupMembers().remove(user));
         return ResponseEntity.ok().header("Access-Control-Allow-Origin", "*").build();
     }
 
     @GetMapping(path = "/groups", produces = "application/json")
-    public ResponseEntity<List<Group>> getGroupsByUser(@RequestParam int userID) {
-        if (!userDAO.findById(userID).isPresent()) return ResponseEntity.notFound().build();
+    public ResponseEntity<List<Group>> getGroupsByUser(Authentication authentication) {
+        User user = userDAO.getUserByEmail(authentication.getPrincipal().toString());
+        if (user == null) return ResponseEntity.notFound().build();
         List<Group> groups =
                 groupDAO.findAll().stream()
                         .filter(
-                                group -> group.getGroupMembers().stream().anyMatch(user -> user.getId() == userID))
+                                group -> group.getGroupMembers().stream().anyMatch(u -> u.getEmail() == user.getEmail()))
                         .collect(Collectors.toList());
         //return ResponseEntity.ok().header("Access-Control-Allow-Origin", "*").body(groups);
         return ResponseEntity.status(HttpStatus.FOUND).body(groups);
