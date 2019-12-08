@@ -42,8 +42,8 @@ public class SignMapController {
     @Autowired
     GroupDAO groupDAO;
 
-    @Autowired
-    private BCryptPasswordEncoder bCryptPasswordEncoder;
+//    @Autowired
+//    private BCryptPasswordEncoder bCryptPasswordEncoder;
 
     @PostMapping(path = "/register", produces = "application/json")
     public ResponseEntity<User> registerUser(
@@ -51,7 +51,8 @@ public class SignMapController {
             @RequestParam String lastName,
             @RequestParam String email,
             @RequestParam String password) {
-        User userToAdd = new User(email, firstName, lastName, bCryptPasswordEncoder.encode(password));
+        //User userToAdd = new User(email, firstName, lastName, bCryptPasswordEncoder.encode(password));
+        User userToAdd = new User(email, firstName, lastName, password);
         userDAO.saveAndFlush(userToAdd);
         URI uri =
                 ServletUriComponentsBuilder.fromCurrentRequest()
@@ -63,7 +64,8 @@ public class SignMapController {
 
     @PostMapping(path = "/login", produces = "application/json")
     public ResponseEntity<User> loginUser(@RequestParam String email, @RequestParam String password) {
-        User loggedUser = userDAO.getUserByEmailAndAndPassword(email, bCryptPasswordEncoder.encode(password));
+        //User loggedUser = userDAO.getUserByEmailAndAndPassword(email, bCryptPasswordEncoder.encode(password));
+        User loggedUser = userDAO.getUserByEmailAndAndPassword(email, password);
         if (loggedUser == null) {
             return ResponseEntity.notFound().header("Access-Control-Allow-Origin", "*").build();
         }
@@ -138,7 +140,7 @@ public class SignMapController {
                         .filter(
                                 group -> group.getGroupMembers().stream().anyMatch(user -> user.getId() == userID))
                         .collect(Collectors.toList());
-        return ResponseEntity.ok().header("Access-Control-Allow-Origin","*").body(groups);
+        return ResponseEntity.ok().header("Access-Control-Allow-Origin", "*").body(groups);
     }
 
     @PostMapping(path = "/locations", produces = "application/json")
@@ -154,10 +156,13 @@ public class SignMapController {
         FeatureCollection fc = FeatureConverter.toFeatureCollection(content);
         List<Feature> featureList = fc.getFeatures();
         List<Geometry> geometries = new ArrayList<>();
-        featureList.forEach(feature -> geometries.add(feature.getGeometry()));
+        featureList.forEach(feature -> {
+            geometries.add(feature.getGeometry());
+            System.out.println(feature.getProperties().get(""));
+        });
         List<Point> points = new ArrayList<>();
         geometries.forEach(geometry -> points.add((Point) geometry));
-        return ResponseEntity.ok().header("Access-Control-Allow-Origin","*").body(retrieveCoordinates(points));
+        return ResponseEntity.ok().header("Access-Control-Allow-Origin", "*").body(retrieveCoordinates(points));
 
     }
 
