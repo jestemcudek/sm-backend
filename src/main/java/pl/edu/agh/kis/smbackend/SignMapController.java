@@ -2,10 +2,9 @@ package pl.edu.agh.kis.smbackend;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import mil.nga.sf.geojson.*;
-
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -27,7 +26,6 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 @RestController
@@ -168,11 +166,49 @@ public class SignMapController {
 
     }
 
+    @PostMapping(path = "/setLocation", produces = "application/json")
+    public ResponseEntity setLocation(@RequestParam double latitude, @RequestParam double longtitude, Authentication authentication) {
+        Location loc = locationDAO.findByLatitudeAndLongitude(latitude, longtitude).orElseGet(() -> {
+            Location tmp = new Location(latitude, longtitude);
+            locationDAO.saveAndFlush(tmp);
+            return tmp;
+        });
+        User user = userDAO.getUserByEmail(authentication.getPrincipal().toString());
+        user.setCurrentLocation(loc);
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping(path = "/settings", produces = "application/json")
+    public ResponseEntity getFullData(Authentication authentication) {
+        User user = userDAO.getUserByEmail(authentication.getPrincipal().toString());
+        if (user == null)
+            return ResponseEntity.notFound().build();
+        return ResponseEntity.ok(user);
+    }
+
     private List<Location> retrieveCoordinates(List<Point> points) {
         List<Location> returnValue = new ArrayList<>();
-        for (Point pos : points) {
-            returnValue.add(new Location(pos.getCoordinates().getY(), pos.getCoordinates().getX()));
-        }
+        if (!points.isEmpty()) {
+            for (Point pos : points) {
+                returnValue.add(new Location(pos.getCoordinates().getY(), pos.getCoordinates().getX()));
+            }
+        } else
+            returnValue = localSuggestions();
         return returnValue;
+    }
+
+    private List<Location> localSuggestions() {
+        List<Location> reserveList = new ArrayList<>();
+        reserveList.add(new Location("Grilosfera", 50.068473, 19.905997));
+        reserveList.add(new Location("Wejście do Lewiatana MS AGH", 50.068494, 19.907510));
+        reserveList.add(new Location("Orlik AGH", 50.068280, 19.904633));
+        reserveList.add(new Location("Przystanek MS AGH", 50.069599, 19.906463));
+        reserveList.add(new Location("WZ AGH", 50.070385, 19.906340));
+        reserveList.add(new Location("B1 AGH", 50.065806, 19.919285));
+        reserveList.add(new Location("Plac Inwalidów", 50.069504, 19.925571));
+        reserveList.add(new Location("Fontanna przy UR", 50.062878, 19.922719));
+        reserveList.add(new Location("Dolne Młyny - Weźże Krafta", 50.064736, 19.926079));
+        reserveList.add(new Location("AGH D17", 50.068086, 19.912649));
+        return reserveList;
     }
 }
