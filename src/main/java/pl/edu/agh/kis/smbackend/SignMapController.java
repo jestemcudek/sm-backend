@@ -58,7 +58,7 @@ public class SignMapController {
                         .path("/{id}")
                         .buildAndExpand(userToAdd.getId())
                         .toUri();
-        return ResponseEntity.created(uri).header("Access-Control-Allow-Origin", "*").body(userToAdd);
+        return ResponseEntity.created(uri).body(userToAdd);
     }
 
     @GetMapping(path = "/login", produces = "application/json")
@@ -66,7 +66,7 @@ public class SignMapController {
         User loggedUser = userDAO.getUserByEmailAndAndPassword(email, bCryptPasswordEncoder.encode(password));
         //User loggedUser = userDAO.getUserByEmailAndAndPassword(email, password);
         if (loggedUser == null) {
-            return ResponseEntity.notFound().header("Access-Control-Allow-Origin", "*").build();
+            return ResponseEntity.notFound().build();
         }
         return ResponseEntity.status(HttpStatus.OK).body(loggedUser);
     }
@@ -75,8 +75,8 @@ public class SignMapController {
     public ResponseEntity<String> remindPassword(@RequestParam String email) {
         String userPwd = userDAO.getUserByEmail(email).getPassword();
         return (userPwd != null)
-                ? ResponseEntity.ok().header("Access-Control-Allow-Origin", "*").body(userPwd)
-                : ResponseEntity.notFound().header("Access-Control-Allow-Origin", "*").build();
+                ? ResponseEntity.ok().body(userPwd)
+                : ResponseEntity.notFound().build();
     }
 
     @PostMapping(path = "/password", produces = "application/json")
@@ -86,8 +86,8 @@ public class SignMapController {
                 userDAO.findById(userID).filter(user -> user.getPassword().equals(oldPass)).get();
         if (userToChange != null) {
             userToChange.setPassword(newpass);
-            return ResponseEntity.ok().header("Access-Control-Allow-Origin", "*").build();
-        } else return ResponseEntity.notFound().header("Access-Control-Allow-Origin", "*").build();
+            return ResponseEntity.ok().build();
+        } else return ResponseEntity.notFound().build();
     }
 
     @PostMapping(path = "/group", produces = "application/json")
@@ -107,7 +107,7 @@ public class SignMapController {
                         .path("/{groupID}")
                         .buildAndExpand(newGroup.getId())
                         .toUri();
-        return ResponseEntity.created(uri).header("Access-Control-Allow-Origin", "*").body(newGroup);
+        return ResponseEntity.created(uri).body(newGroup);
     }
 
     @PostMapping(path = "/selectGroup", produces = "application/json")
@@ -116,8 +116,8 @@ public class SignMapController {
         if (groupDAO.findById(groupID).isPresent()) {
             newMember = userDAO.getUserByEmail(authentication.getPrincipal().toString());
             groupDAO.findById(groupID).get().getGroupMembers().add(newMember);
-            return ResponseEntity.ok().header("Access-Control-Allow-Origin", "*").build();
-        } else return ResponseEntity.notFound().header("Access-Control-Allow-Origin", "*").build();
+            return ResponseEntity.ok().build();
+        } else return ResponseEntity.notFound().build();
     }
 
     @PostMapping(path = "leaveGroup", produces = "application/json")
@@ -127,7 +127,7 @@ public class SignMapController {
         groupDAO
                 .findById(groupID)
                 .ifPresent(group -> group.getGroupMembers().remove(user));
-        return ResponseEntity.ok().header("Access-Control-Allow-Origin", "*").build();
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping(path = "/groups", produces = "application/json")
