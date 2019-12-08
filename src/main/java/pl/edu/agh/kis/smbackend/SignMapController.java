@@ -61,7 +61,7 @@ public class SignMapController {
         return ResponseEntity.created(uri).body(userToAdd);
     }
 
-    @GetMapping(path = "/login", produces = "application/json")
+    @PostMapping(path = "/login", produces = "application/json")
     public ResponseEntity<User> loginUser(@RequestParam String email, @RequestParam String password) {
         User loggedUser = userDAO.getUserByEmailAndAndPassword(email, bCryptPasswordEncoder.encode(password));
         //User loggedUser = userDAO.getUserByEmailAndAndPassword(email, password);
