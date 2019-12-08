@@ -3,6 +3,7 @@ package pl.edu.agh.kis.smbackend;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import mil.nga.sf.geojson.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -69,7 +70,7 @@ public class SignMapController {
         }
 //        HttpHeaders responseHeaders = new HttpHeaders();
 //        responseHeaders.add("Access-Control-Allow-Origin", "*");
-        return ResponseEntity.ok(loggedUser);
+        return new ResponseEntity<>(loggedUser, HttpStatus.OK);
     }
 
     @PostMapping(path = "/forgotten", produces = "application/json")
