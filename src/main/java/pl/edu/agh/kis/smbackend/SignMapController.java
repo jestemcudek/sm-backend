@@ -70,7 +70,7 @@ public class SignMapController {
         }
 //        HttpHeaders responseHeaders = new HttpHeaders();
 //        responseHeaders.add("Access-Control-Allow-Origin", "*");
-        return new ResponseEntity<>(loggedUser, HttpStatus.OK);
+        return ResponseEntity.status(HttpStatus.OK).body(loggedUser);
     }
 
     @PostMapping(path = "/forgotten", produces = "application/json")
@@ -141,7 +141,8 @@ public class SignMapController {
                         .filter(
                                 group -> group.getGroupMembers().stream().anyMatch(user -> user.getId() == userID))
                         .collect(Collectors.toList());
-        return ResponseEntity.ok().header("Access-Control-Allow-Origin", "*").body(groups);
+        //return ResponseEntity.ok().header("Access-Control-Allow-Origin", "*").body(groups);
+        return ResponseEntity.status(HttpStatus.FOUND).body(groups);
     }
 
     @PostMapping(path = "/locations", produces = "application/json")
@@ -163,8 +164,8 @@ public class SignMapController {
         });
         List<Point> points = new ArrayList<>();
         geometries.forEach(geometry -> points.add((Point) geometry));
-        return ResponseEntity.ok().header("Access-Control-Allow-Origin", "*").body(retrieveCoordinates(points));
-
+        //return ResponseEntity.ok().header("Access-Control-Allow-Origin", "*").body(retrieveCoordinates(points));
+        return ResponseEntity.status(HttpStatus.OK).body(retrieveCoordinates(points));
     }
 
     @PostMapping(path = "/setLocation", produces = "application/json")
