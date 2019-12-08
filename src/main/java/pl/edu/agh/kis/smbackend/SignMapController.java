@@ -2,8 +2,11 @@ package pl.edu.agh.kis.smbackend;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import mil.nga.sf.geojson.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -28,6 +31,7 @@ import java.util.stream.Collectors;
 
 @RestController
 public class SignMapController {
+    Logger logger = LoggerFactory.getLogger(SignMapController.class);
 
     @Autowired
     UserDAO userDAO;
@@ -38,13 +42,16 @@ public class SignMapController {
     @Autowired
     GroupDAO groupDAO;
 
+    @Autowired
+    private BCryptPasswordEncoder bCryptPasswordEncoder;
+
     @PostMapping(path = "/register", produces = "application/json")
     public ResponseEntity<User> registerUser(
             @RequestParam String firstName,
             @RequestParam String lastName,
             @RequestParam String email,
             @RequestParam String password) {
-        User userToAdd = new User(email, firstName, lastName, password);
+        User userToAdd = new User(email, firstName, lastName, bCryptPasswordEncoder.encode(password));
         userDAO.saveAndFlush(userToAdd);
         URI uri =
                 ServletUriComponentsBuilder.fromCurrentRequest()
@@ -56,7 +63,7 @@ public class SignMapController {
 
     @PostMapping(path = "/login", produces = "application/json")
     public ResponseEntity<User> loginUser(@RequestParam String email, @RequestParam String password) {
-        User loggedUser = userDAO.getUserByEmailAndAndPassword(email, password);
+        User loggedUser = userDAO.getUserByEmailAndAndPassword(email, bCryptPasswordEncoder.encode(password));
         if (loggedUser == null) {
             return ResponseEntity.notFound().header("Access-Control-Allow-Origin", "*").build();
         }
@@ -131,7 +138,7 @@ public class SignMapController {
                         .filter(
                                 group -> group.getGroupMembers().stream().anyMatch(user -> user.getId() == userID))
                         .collect(Collectors.toList());
-        return ResponseEntity.ok(groups);
+        return ResponseEntity.ok().header("Access-Control-Allow-Origin","*").body(groups);
     }
 
     @PostMapping(path = "/locations", produces = "application/json")
@@ -150,7 +157,7 @@ public class SignMapController {
         featureList.forEach(feature -> geometries.add(feature.getGeometry()));
         List<Point> points = new ArrayList<>();
         geometries.forEach(geometry -> points.add((Point) geometry));
-        return ResponseEntity.ok(retrieveCoordinates(points));
+        return ResponseEntity.ok().header("Access-Control-Allow-Origin","*").body(retrieveCoordinates(points));
 
     }
 
