@@ -2,9 +2,9 @@ package pl.edu.agh.kis.smbackend;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import mil.nga.sf.geojson.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -27,11 +27,11 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 @RestController
 public class SignMapController {
-    Logger logger = LoggerFactory.getLogger(SignMapController.class);
 
     @Autowired
     UserDAO userDAO;
@@ -42,8 +42,8 @@ public class SignMapController {
     @Autowired
     GroupDAO groupDAO;
 
-//    @Autowired
-//    private BCryptPasswordEncoder bCryptPasswordEncoder;
+    @Autowired
+    private BCryptPasswordEncoder bCryptPasswordEncoder;
 
     @PostMapping(path = "/register", produces = "application/json")
     public ResponseEntity<User> registerUser(
@@ -51,8 +51,8 @@ public class SignMapController {
             @RequestParam String lastName,
             @RequestParam String email,
             @RequestParam String password) {
-        //User userToAdd = new User(email, firstName, lastName, bCryptPasswordEncoder.encode(password));
-        User userToAdd = new User(email, firstName, lastName, password);
+        User userToAdd = new User(email, firstName, lastName, bCryptPasswordEncoder.encode(password));
+        //User userToAdd = new User(email, firstName, lastName, password);
         userDAO.saveAndFlush(userToAdd);
         URI uri =
                 ServletUriComponentsBuilder.fromCurrentRequest()
@@ -64,12 +64,14 @@ public class SignMapController {
 
     @PostMapping(path = "/login", produces = "application/json")
     public ResponseEntity<User> loginUser(@RequestParam String email, @RequestParam String password) {
-        //User loggedUser = userDAO.getUserByEmailAndAndPassword(email, bCryptPasswordEncoder.encode(password));
-        User loggedUser = userDAO.getUserByEmailAndAndPassword(email, password);
+        User loggedUser = userDAO.getUserByEmailAndAndPassword(email, bCryptPasswordEncoder.encode(password));
+        //User loggedUser = userDAO.getUserByEmailAndAndPassword(email, password);
         if (loggedUser == null) {
             return ResponseEntity.notFound().header("Access-Control-Allow-Origin", "*").build();
         }
-        return ResponseEntity.ok().header("Access-Control-Allow-Origin", "*").body(loggedUser);
+//        HttpHeaders responseHeaders = new HttpHeaders();
+//        responseHeaders.add("Access-Control-Allow-Origin", "*");
+        return ResponseEntity.ok(loggedUser);
     }
 
     @PostMapping(path = "/forgotten", produces = "application/json")
@@ -105,7 +107,7 @@ public class SignMapController {
         groupDAO.save(newGroup);
         URI uri =
                 ServletUriComponentsBuilder.fromCurrentRequest()
-                        .path("/{groupID")
+                        .path("/{groupID}")
                         .buildAndExpand(newGroup.getId())
                         .toUri();
         return ResponseEntity.created(uri).header("Access-Control-Allow-Origin", "*").body(newGroup);
