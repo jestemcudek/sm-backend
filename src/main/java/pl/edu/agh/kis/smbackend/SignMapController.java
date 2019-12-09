@@ -27,7 +27,6 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 public class SignMapController {
@@ -115,18 +114,23 @@ public class SignMapController {
         User newMember = null;
         if (groupDAO.findById(groupID).isPresent()) {
             newMember = userDAO.getUserByEmail(authentication.getPrincipal().toString());
-            groupDAO.findById(groupID).get().getGroupMembers().add(newMember);
+            Group g = groupDAO.findById(groupID).get();
+            g.getGroupMembers().add(newMember);
+            groupDAO.saveAndFlush(g);
             return ResponseEntity.ok().build();
         } else return ResponseEntity.notFound().build();
     }
 
-    @PostMapping(path = "leaveGroup", produces = "application/json")
+    @PostMapping(path = "/leaveGroup", produces = "application/json")
     public ResponseEntity<Group> leaveGroup(Authentication authentication, @RequestParam int groupID) {
         User user = userDAO.getUserByEmail(authentication.getPrincipal().toString());
 
         groupDAO
                 .findById(groupID)
-                .ifPresent(group -> group.getGroupMembers().remove(user));
+                .ifPresent(group -> {
+                    group.getGroupMembers().remove(user);
+                    groupDAO.saveAndFlush(group);
+                });
         return ResponseEntity.ok().build();
     }
 
@@ -134,13 +138,12 @@ public class SignMapController {
     public ResponseEntity<List<Group>> getGroupsByUser(Authentication authentication) {
         User user = userDAO.getUserByEmail(authentication.getPrincipal().toString());
         if (user == null) return ResponseEntity.notFound().build();
-        List<Group> groups =
-                groupDAO.findAll().stream()
-                        .filter(
-                                group -> group.getGroupMembers().stream().anyMatch(u -> u.getEmail() == user.getEmail()))
-                        .collect(Collectors.toList());
-        //return ResponseEntity.ok().header("Access-Control-Allow-Origin", "*").body(groups);
-        return ResponseEntity.status(HttpStatus.FOUND).body(groups);
+        List<Group> groups = new ArrayList<>();
+        groupDAO.findAll().forEach(group -> {
+            if (group.getGroupMembers().contains(user))
+                groups.add(group);
+        });
+        return ResponseEntity.ok().header("Access-Control-Allow-Origin", "*").body(groups);
     }
 
     @PostMapping(path = "/locations", produces = "application/json")
